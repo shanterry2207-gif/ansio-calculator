@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANSIO CALCULATOR</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  color: white;
+  background:
+    radial-gradient(circle at top left, #24245c, transparent 45%),
+    linear-gradient(135deg, #080b16, #17152d, #080b16);
+}
+
+.calculator {
+  width: 100%;
+  max-width: 370px;
+  padding: 24px;
+  border: 1px solid #45447c;
+  border-radius: 28px;
+  background: rgba(19, 21, 42, 0.96);
+  box-shadow: 0 0 45px #5145cd40;
+}
+
+.brand {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.brand h1 {
+  font-size: 27px;
+  letter-spacing: 3px;
+  background: linear-gradient(90deg, #58d5ff, #b88aff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brand p {
+  color: #9ba3c7;
+  font-size: 11px;
+  letter-spacing: 3px;
+  margin-top: 7px;
+}
+
+.display {
+  width: 100%;
+  height: 105px;
+  padding: 15px;
+  margin-bottom: 18px;
+  border-radius: 17px;
+  background: #090d1c;
+  border: 1px solid #292e50;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+#history {
+  color: #8c94b9;
+  font-size: 15px;
+  min-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+#screen {
+  width: 100%;
+  text-align: right;
+  color: white;
+  font-size: 34px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 11px;
+}
+
+button {
+  min-width: 0;
+  height: 61px;
+  border: 1px solid #343957;
+  border-radius: 17px;
+  background: #222640;
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .12s, filter .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active {
+  transform: scale(.94);
+  filter: brightness(1.35);
+}
+
+button:focus-visible {
+  outline: 2px solid #75d8ff;
+  outline-offset: 2px;
+}
+
+.utility {
+  color: #65d9ff;
+  background: #1b3046;
+}
+
+.clear {
+  color: #ff8fbc;
+  background: #43223e;
+}
+
+.operator {
+  color: #c5a1ff;
+  background: #30264e;
+}
+
+.equals {
+  background: linear-gradient(135deg, #6559f5, #a04dff);
+  border: none;
+  box-shadow: 0 5px 18px #8655ff40;
+}
+
+.zero {
+  grid-column: span 2;
+}
+
+.footer {
+  margin-top: 21px;
+  text-align: center;
+  color: #858bad;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+}
+
+.footer span {
+  color: #8b83ff;
+}
+
+@media (max-width: 360px) {
+  .calculator { padding: 16px; }
+  button { height: 55px; }
+}
+</style>
+</head>
+
+<body>
+<main class="calculator">
+  <header class="brand">
+    <h1>ANSIO</h1>
+    <p>SMART CALCULATOR</p>
+  </header>
+
+  <section class="display" aria-label="Calculator display">
+    <div id="history" aria-live="polite"></div>
+    <div id="screen" aria-live="polite">0</div>
+  </section>
+
+  <section class="keys" aria-label="Calculator keys">
+    <button class="clear" data-action="clear">AC</button>
+    <button class="utility" data-action="delete">DEL</button>
+    <button class="utility" data-action="percent">%</button>
+    <button class="operator" data-value="÷">÷</button>
+
+    <button data-value="7">7</button>
+    <button data-value="8">8</button>
+    <button data-value="9">9</button>
+    <button class="operator" data-value="×">×</button>
+
+    <button data-value="4">4</button>
+    <button data-value="5">5</button>
+    <button data-value="6">6</button>
+    <button class="operator" data-value="−">−</button>
+
+    <button data-value="1">1</button>
+    <button data-value="2">2</button>
+    <button data-value="3">3</button>
+    <button class="operator" data-value="+">+</button>
+
+    <button class="utility" data-action="sign">+/−</button>
+    <button data-value="0">0</button>
+    <button data-value=".">.</button>
+    <button class="equals" data-action="equals">=</button>
+  </section>
+
+  <footer class="footer">
+    MADE WITH ♥ BY <span>ANSIO</span>
+  </footer>
+</main>
+
+<script>
+const screen = document.getElementById("screen");
+const history = document.getElementById("history");
+
+let current = "0";
+let previous = null;
+let operator = null;
+let fresh = false;
+let justCalculated = false;
+
+function render() {
+  screen.textContent = current;
+}
+
+function reset() {
+  current = "0";
+  previous = null;
+  operator = null;
+  fresh = false;
+  justCalculated = false;
+  history.textContent = "";
+  render();
+}
+
+function inputNumber(value) {
+  if (fresh || justCalculated) {
+    current = value === "." ? "0." : value;
+    fresh = false;
+    justCalculated = false;
+  } else if (value === ".") {
+    if (!current.includes(".")) current += ".";
+  } else {
+    current = current === "0" ? value : current + value;
+  }
+  render();
+}
+
+function chooseOperator(nextOperator) {
+  if (operator && !fresh) calculate();
+  previous = Number(current);
+  operator = nextOperator;
+  fresh = true;
+  justCalculated = false;
+  history.textContent = current + " " + operator;
+}
+
+function calculate() {
+  if (operator === null || previous === null) return;
+
+  const a = previous;
+  const b = Number(current);
+  let result;
+
+  if (operator === "+") result = a + b;
+  if (operator === "−") result = a - b;
+  if (operator === "×") result = a * b;
+  if (operator === "÷") {
+    if (b === 0) {
+      current = "Cannot divide by zero";
+      previous = null;
+      operator = null;
+      fresh = true;
+      justCalculated = true;
+      history.textContent = "";
+      render();
+      return;
+    }
+    result = a / b;
+  }
+
+  history.textContent = `${a} ${operator} ${b} =`;
+
+  if (!Number.isFinite(result)) {
+    current = "Error";
+  } else {
+    result = Number(result.toPrecision(12));
+    current = String(result);
+  }
+
+  previous = null;
+  operator = null;
+  fresh = true;
+  justCalculated = true;
+  render();
+}
+
+function deleteLast() {
+  if (fresh || justCalculated || current === "Error") {
+    current = "0";
+    fresh = false;
+    justCalculated = false;
+  } else {
+    current = current.length > 1 ? current.slice(0, -1) : "0";
+    if (current === "-") current = "0";
+  }
+  render();
+}
+
+function percent() {
+  const value = Number(current);
+  if (!Number.isFinite(value)) return;
+  current = String(Number((value / 100).toPrecision(12)));
+  fresh = false;
+  justCalculated = false;
+  render();
+}
+
+function toggleSign() {
+  if (current === "0" || !Number.isFinite(Number(current))) return;
+  current = current.startsWith("-") ? current.slice(1) : "-" + current;
+  render();
+}
+
+document.querySelector(".keys").addEventListener("click", event => {
+  const button = event.target.closest("button");
+  if (!button) return;
+
+  if (button.dataset.value !== undefined) {
+    const value = button.dataset.value;
+    if (["+", "−", "×", "÷"].includes(value)) {
+      chooseOperator(value);
+    } else {
+      inputNumber(value);
+    }
+    return;
+  }
+
+  const action = button.dataset.action;
+  if (action === "clear") reset();
+  if (action === "delete") deleteLast();
+  if (action === "percent") percent();
+  if (action === "sign") toggleSign();
+  if (action === "equals") calculate();
+});
+
+document.addEventListener("keydown", event => {
+  if (/^[0-9.]$/.test(event.key)) inputNumber(event.key);
+  else if (event.key === "+") chooseOperator("+");
+  else if (event.key === "-") chooseOperator("−");
+  else if (event.key === "*") chooseOperator("×");
+  else if (event.key === "/") {
+    event.preventDefault();
+    chooseOperator("÷");
+  }
+  else if (event.key === "Enter" || event.key === "=") calculate();
+  else if (event.key === "Backspace") deleteLast();
+  else if (event.key === "Escape") reset();
+  else if (event.key === "%") percent();
+});
+</script>
+</body>
+</html>
